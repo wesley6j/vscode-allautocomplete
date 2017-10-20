@@ -22,6 +22,7 @@
 import * as vscode from 'vscode';
 import { Settings } from './Settings';
 import { WordList } from './WordList';
+import { CompletionItem } from './CompletionItem';
 
 /**
  * Class that provides completion items for this extension.
@@ -39,6 +40,8 @@ class CompletionItemProviderClass {
      */
     provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList> {
         let word = document.getText(document.getWordRangeAtPosition(position));
+        var has_prefix = false;
+        if(word[0] === ":") has_prefix = true;
         word = word.replace(Settings.whitespaceSplitter(document.languageId), '');
         let results = [];
         WordList.forEach((trie, doc) => {
@@ -57,7 +60,13 @@ class CompletionItemProviderClass {
         map[word] = skip;
         map[WordList.activeWord] = skip;
         // Deduplicate results now.
-        results.forEach((item) => {
+        results.forEach((source) => {
+            var item;
+            if(has_prefix){
+                item = new CompletionItem(":" + source.label, source.file);
+            } else {
+                item = source;
+            }
             let inserted = map[item.label];
             if (!inserted) {
                 clean.push(item);
